@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-black font-sans overflow-x-hidden;
+}
+
+.smooth-scrollbar {
+  scrollbar-width: thin;
+}
+
+.smooth-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.smooth-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #a3a3a3;
+  border-radius: 3px;
+}
+
+/* 360° Hotspots – circles and arrows (admin + customer views) */
+/* Anchored to yaw/pitch; fixed size; no scale with zoom. */
+
+/* Preserve Pannellum's position:absolute – do NOT override or hotspots will drift */
+.pnlm-hotspot-base.editor-hotspot-circle,
+.pnlm-hotspot-base.editor-hotspot-arrow {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* Circle hotspot: perfect circle, white fill, soft glow, fixed size */
+.pnlm-hotspot-base.editor-hotspot-circle {
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.pnlm-hotspot-base.editor-hotspot-circle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -16px;
+  border-radius: 50%;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 0 12px 4px rgba(255, 255, 255, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.12);
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pnlm-hotspot-base.editor-hotspot-circle:hover::before {
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow:
+    0 0 0 1px rgba(128, 128, 128, 0.3),
+    0 0 18px 6px rgba(255, 255, 255, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+/* Arrow hotspot: black box, white arrow rotates inside (direction only) */
+.pnlm-hotspot-base.editor-hotspot-arrow {
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+}
+
+/* Black background box – centered, subtle (semi-transparent) and fixed, no rotation */
+.pnlm-hotspot-base.editor-hotspot-arrow::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38px;
+  height: 38px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.pnlm-hotspot-base.editor-hotspot-arrow:hover::before {
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* White arrow icon – only this rotates with direction */
+.pnlm-hotspot-base.editor-hotspot-arrow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E");
+  background-size: 20px 20px;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: translate(-50%, -50%) rotate(var(--arrow-rotation, 0deg));
+  transition: filter 0.2s ease;
+}
+
+.pnlm-hotspot-base.editor-hotspot-arrow:hover::after {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+}
+
+/* Hide empty span so it doesn't affect hotspot layout */
+.pnlm-hotspot-base.editor-hotspot-circle span,
+.pnlm-hotspot-base.editor-hotspot-arrow span {
+  display: none;
+}
+
+/* Hide Pannellum's tiny built-in fullscreen icon – we render our own larger button */
+.pnlm-fullscreen-toggle-button {
+  display: none !important;
+}
+

@@ -1,0 +1,16 @@
+{
+  "name": "DCEENY Interior Design Studio",
+  "short_name": "DCEENY",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "description": "DCEENY Interior Design Studio — Factor & DCEENY 360.",
+  "icons": [
+    {
+      "src": "/logo.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "camera-f02f3"
+  },
+  "targets": {
+    "camera-f02f3": {
+      "hosting": {
+        "dceeny360": [
+          "dceeny-360"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

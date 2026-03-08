@@ -1,0 +1,21 @@
+{
+  "name": "functions",
+  "scripts": {
+    "build": "npx tsc",
+    "deploy": "firebase deploy --only functions",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "cloudinary": "^2.5.1",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
+
