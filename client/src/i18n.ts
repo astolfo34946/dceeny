@@ -85,16 +85,16 @@ const resources = {
       admin_nav_dashboard: 'Dashboard',
       admin_nav_projects: 'Projects & DCEENY 360',
       admin_nav_3d: '3D',
-      admin_nav_customers: 'Customers & Factor',
+      admin_nav_customers: 'Customers & Invoices',
       admin_nav_settings: 'Settings',
 
       // Customer dashboard cards
       dashboard_welcome: 'Welcome',
       dashboard_welcome_name: 'Welcome back, {{name}}',
       dashboard_admin_subtitle: 'Manage invoices, 360° progress and 3D scenes for your projects.',
-      dashboard_customer_subtitle: 'Access your factor and explore your project in 360° and 3D.',
+      dashboard_customer_subtitle: 'Access your invoices and explore your project in 360° and 3D.',
       dashboard_choose_section: 'Choose a section',
-      dashboard_factor_title: 'Factor',
+      dashboard_factor_title: 'Invoice',
       dashboard_factor_subtitle_admin: 'Manage invoices',
       dashboard_factor_subtitle_customer: 'View your invoices',
       dashboard_360_title: 'DCEENY 360',
@@ -117,8 +117,8 @@ const resources = {
       // Admin dashboard
       admin_dashboard_welcome: 'Welcome, {{name}}',
       admin_dashboard_title: 'Dashboard',
-      admin_dashboard_subtitle: 'Manage customers, Factor, 360° projects and 3D.',
-      admin_dashboard_customers_factor_label: 'Customers & Factor',
+      admin_dashboard_subtitle: 'Manage customers, invoices, 360° projects and 3D.',
+      admin_dashboard_customers_factor_label: 'Customers & Invoices',
       admin_dashboard_customers_factor_helper: 'Invoices and payments',
       admin_dashboard_projects_label: 'Projects & DCEENY 360',
       admin_dashboard_projects_helper: 'Assign customer, weeks and scenes',
@@ -160,7 +160,7 @@ const resources = {
       factor_empty_payments: 'No payments yet.',
 
       // Factor – admin
-      factor_admin_title: 'Factor',
+      factor_admin_title: 'Invoice',
       factor_admin_subtitle: 'Purchases and payments for this customer.',
       factor_admin_add_purchase: '+ Add Purchase',
       factor_admin_add_payment: '+ Add Payment',
@@ -173,7 +173,7 @@ const resources = {
       factor_print_invoice: 'Print invoice',
 
       // Factor – customer
-      customer_factor_title: 'Your Factor',
+      customer_factor_title: 'Your Invoice',
       customer_factor_subtitle: 'Contact us for any changes.',
 
       // Common actions / labels
@@ -372,15 +372,15 @@ const resources = {
       admin_nav_dashboard: 'Tableau de bord',
       admin_nav_projects: 'Projets & DCEENY 360',
       admin_nav_3d: '3D',
-      admin_nav_customers: 'Clients & Factor',
+      admin_nav_customers: 'Clients & Factures',
       admin_nav_settings: 'Paramètres',
 
       dashboard_welcome: 'Bienvenue',
       dashboard_welcome_name: 'Bon retour, {{name}}',
       dashboard_admin_subtitle: 'Gérez les factures, le suivi hebdomadaire 360° et les scènes 3D de vos projets.',
-      dashboard_customer_subtitle: 'Accédez à votre factor et explorez votre projet en 360° et en 3D.',
+      dashboard_customer_subtitle: 'Accédez à vos factures et explorez votre projet en 360° et en 3D.',
       dashboard_choose_section: 'Choisissez une section',
-      dashboard_factor_title: 'Factor',
+      dashboard_factor_title: 'Facture',
       dashboard_factor_subtitle_admin: 'Gérer les factures',
       dashboard_factor_subtitle_customer: 'Voir vos factures',
       dashboard_360_title: 'DCEENY 360',
@@ -401,8 +401,8 @@ const resources = {
 
       admin_dashboard_welcome: 'Bienvenue, {{name}}',
       admin_dashboard_title: 'Tableau de bord',
-      admin_dashboard_subtitle: 'Gérez les clients, le Factor, les projets 360° et le 3D.',
-      admin_dashboard_customers_factor_label: 'Clients & Factor',
+      admin_dashboard_subtitle: 'Gérez les clients, les factures, les projets 360° et le 3D.',
+      admin_dashboard_customers_factor_label: 'Clients & Factures',
       admin_dashboard_customers_factor_helper: 'Factures et paiements',
       admin_dashboard_projects_label: 'Projets & DCEENY 360',
       admin_dashboard_projects_helper: 'Attribuer client, semaines et scènes',
@@ -442,7 +442,7 @@ const resources = {
       factor_empty_purchases: 'Aucun achat pour le moment.',
       factor_empty_payments: 'Aucun paiement pour le moment.',
 
-      factor_admin_title: 'Factor',
+      factor_admin_title: 'Facture',
       factor_admin_subtitle: 'Achats et paiements pour ce client.',
       factor_admin_add_purchase: '+ Ajouter un achat',
       factor_admin_add_payment: '+ Ajouter un paiement',
@@ -454,7 +454,7 @@ const resources = {
       factor_delete_payment_confirm: 'Supprimer ce paiement ?',
       factor_print_invoice: 'Imprimer la facture',
 
-      customer_factor_title: 'Votre Factor',
+      customer_factor_title: 'Votre Facture',
       customer_factor_subtitle: 'Contactez-nous pour toute modification.',
 
       common_save: 'Enregistrer',
@@ -646,15 +646,15 @@ const resources = {
       admin_nav_dashboard: 'لوحة التحكم',
       admin_nav_projects: 'المشاريع و DCEENY 360',
       admin_nav_3d: '3D',
-      admin_nav_customers: 'العملاء و Factor',
+      admin_nav_customers: 'العملاء والفواتير',
       admin_nav_settings: 'الإعدادات',
 
       dashboard_welcome: 'مرحبًا',
       dashboard_welcome_name: 'مرحبًا، {{name}}',
-      dashboard_admin_subtitle: 'إدارة الفواتير والتقدّم الأسبوعي 360° لمشاريعك.',
-      dashboard_customer_subtitle: 'اطّلع على الـ Factor واستكشف مشروعك بتقنية 360°.',
+      dashboard_admin_subtitle: 'إدارة الفواتير والتقدّم الأسبوعي 360° ومشاهد 3D لمشاريعك.',
+      dashboard_customer_subtitle: 'اطّلع على فواتيرك واستكشف مشروعك بتقنية 360° و 3D.',
       dashboard_choose_section: 'اختر قسمًا',
-      dashboard_factor_title: 'Factor',
+      dashboard_factor_title: 'فاتورة',
       dashboard_factor_subtitle_admin: 'إدارة الفواتير',
       dashboard_factor_subtitle_customer: 'عرض الفواتير',
       dashboard_360_title: 'DCEENY 360',
@@ -675,8 +675,8 @@ const resources = {
 
       admin_dashboard_welcome: 'مرحبًا، {{name}}',
       admin_dashboard_title: 'لوحة التحكم',
-      admin_dashboard_subtitle: 'إدارة العملاء و Factor ومشاريع 360° و 3D.',
-      admin_dashboard_customers_factor_label: 'العملاء و Factor',
+      admin_dashboard_subtitle: 'إدارة العملاء والفواتير ومشاريع 360° و 3D.',
+      admin_dashboard_customers_factor_label: 'العملاء والفواتير',
       admin_dashboard_customers_factor_helper: 'الفواتير والمدفوعات',
       admin_dashboard_projects_label: 'المشاريع و DCEENY 360',
       admin_dashboard_projects_helper: 'تعيين العميل، الأسابيع والمشاهد',
@@ -716,7 +716,7 @@ const resources = {
       factor_empty_purchases: 'لا توجد مشتريات بعد.',
       factor_empty_payments: 'لا توجد مدفوعات بعد.',
 
-      factor_admin_title: 'Factor',
+      factor_admin_title: 'فاتورة',
       factor_admin_subtitle: 'مشتريات ومدفوعات هذا العميل.',
       factor_admin_add_purchase: '+ إضافة شراء',
       factor_admin_add_payment: '+ إضافة دفع',
@@ -728,7 +728,7 @@ const resources = {
       factor_delete_payment_confirm: 'حذف هذا الدفع؟',
       factor_print_invoice: 'طباعة الفاتورة',
 
-      customer_factor_title: 'الـ Factor الخاص بك',
+      customer_factor_title: 'فاتورتك',
       customer_factor_subtitle: ' تواصل معنا لأي تعديل',
 
       common_save: 'حفظ',
