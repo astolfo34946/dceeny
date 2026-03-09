@@ -5,9 +5,12 @@ interface DashboardCardsProps {
   factorHref: string;
   dceeny360Href: string;
   is360Locked: boolean;
+  is3DLocked?: boolean;
   isAdmin: boolean;
   /** Optional welcome name (e.g. user first name) */
   userName?: string;
+  /** Optional 3D viewer link; when provided, show a third card for 3D. */
+  threeDHref?: string;
 }
 
 function IconFactor() {
@@ -26,6 +29,15 @@ function Icon360() {
   );
 }
 
+function Icon3D() {
+  return (
+    <svg className="h-8 w-8 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5L12 3l8 4.5v9L12 21l-8-4.5v-9z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-9m8-4.5-8 4.5-8-4.5" />
+    </svg>
+  );
+}
+
 function IconLock() {
   return (
     <svg className="h-8 w-8 shrink-0 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -38,8 +50,10 @@ export function DashboardCards({
   factorHref,
   dceeny360Href,
   is360Locked,
+  is3DLocked = false,
   isAdmin,
   userName,
+  threeDHref,
 }: DashboardCardsProps) {
   const { t } = useTranslation();
 
@@ -61,7 +75,13 @@ export function DashboardCards({
       <p className="mb-6 text-left text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
         {t('dashboard_choose_section')}
       </p>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div
+        className={
+          isAdmin
+            ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
+            : 'grid gap-4 grid-cols-1'
+        }
+      >
         <Link
           to={factorHref}
           className="group flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
@@ -124,6 +144,47 @@ export function DashboardCards({
             </svg>
           </Link>
         )}
+
+        {threeDHref && (is3DLocked ? (
+          <div
+            className="flex items-center gap-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-6 text-left opacity-90"
+            aria-disabled="true"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white">
+              <IconLock />
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="block text-base font-semibold tracking-tight text-neutral-600">
+                {t('dashboard_3d_title')}
+              </span>
+              <span className="mt-0.5 block text-xs text-neutral-500">
+                {t('dashboard_3d_locked_subtitle')}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <Link
+            to={threeDHref}
+            className="group flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 text-black group-hover:border-black">
+              <Icon3D />
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="block text-base font-semibold tracking-tight text-black group-hover:opacity-90">
+                {t('dashboard_3d_title')}
+              </span>
+              <span className="mt-0.5 block text-xs text-neutral-500">
+                {isAdmin
+                  ? t('dashboard_3d_subtitle_admin')
+                  : t('dashboard_3d_subtitle_customer')}
+              </span>
+            </div>
+            <svg className="h-5 w-5 shrink-0 text-neutral-400 group-hover:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        ))}
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ export interface Factor {
 export interface Purchase {
   id: string;
   description: string;
+  quantity: number;
   amount: number;
   date: string;
 }
@@ -54,6 +55,7 @@ export interface Project {
   address?: string;
   customerId: string | null;
   is360Unlocked: boolean;
+  is3DUnlocked: boolean;
 }
 
 export interface SceneHotspot {

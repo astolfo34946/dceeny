@@ -11,9 +11,11 @@ function getBackPath(pathname: string): string | null {
   if (path === '/admin' || path === '/app') return null;
   if (path.startsWith('/admin/customers/') && path.includes('/factor')) return '/admin/customers';
   if (path.startsWith('/admin/projects/') && path.includes('/weeks')) return '/admin/projects';
+  if (path.startsWith('/admin/3d/') && path.includes('/scenes')) return '/admin/3d';
   if (path.startsWith('/admin/')) return '/admin';
-  if (path === '/app/factor' || path === '/app/360') return '/app';
+  if (path === '/app/factor' || path === '/app/360' || path === '/app/3d') return '/app';
   if (path.startsWith('/app/360/')) return '/app/360';
+  if (path.startsWith('/app/3d/')) return '/app/3d';
   if (path.startsWith('/app/')) return '/app';
   return null;
 }

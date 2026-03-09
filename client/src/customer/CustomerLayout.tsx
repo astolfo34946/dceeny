@@ -4,6 +4,7 @@ import { CustomerDashboardHome } from './CustomerDashboardHome';
 import { CustomerFactor } from './CustomerFactor';
 import { Customer360Weeks } from './Customer360Weeks';
 import { Customer360Viewer } from './Customer360Viewer';
+import { Customer3D } from './Customer3D';
 
 export function CustomerLayout() {
   return (
@@ -15,6 +16,7 @@ export function CustomerLayout() {
           <Route path="factor" element={<CustomerFactor />} />
           <Route path="360" element={<Customer360Weeks />} />
           <Route path="360/weeks/:weekId" element={<Customer360Viewer />} />
+          <Route path="3d" element={<Customer3D />} />
         </Routes>
       </main>
     </div>

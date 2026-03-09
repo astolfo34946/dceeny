@@ -20,7 +20,13 @@ export function useCustomerProject(customerId: string | undefined) {
     getDocs(q).then((snap) => {
       const doc = snap.docs[0];
       if (doc) {
-        setProject({ id: doc.id, ...doc.data() } as Project);
+        const data = doc.data() as Record<string, unknown>;
+        setProject({
+          id: doc.id,
+          ...(data as any),
+          is360Unlocked: data.is360Unlocked === true,
+          is3DUnlocked: data.is3DUnlocked === true,
+        } as Project);
       } else {
         setProject(null);
       }

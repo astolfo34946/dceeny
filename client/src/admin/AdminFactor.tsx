@@ -3,6 +3,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   deleteDoc,
@@ -12,8 +13,10 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { db } from '../lib/firebase';
-import type { Purchase, Payment } from '../types/app';
+import type { Purchase, Payment, Factor } from '../types/app';
 import { getOrCreateFactorForCustomer, recomputeFactorTotals, formatFactorAmount } from '../lib/factor';
+import { generateInvoiceHTML, openInvoiceInNewTab } from '../utils/invoiceHTML';
+import { getInvoiceSettings } from '../lib/invoiceSettings';
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
@@ -24,20 +27,23 @@ export function AdminFactor() {
   const navigate = useNavigate();
   const factorId = customerId ?? '';
 
+  const [factor, setFactor] = useState<Factor | null>(null);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totals, setTotals] = useState({ totalPurchases: 0, totalPaid: 0, balance: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [printLoading, setPrintLoading] = useState(false);
   const { t } = useTranslation();
 
   const loadData = useCallback(async () => {
     if (!factorId) return;
-    const factor = await getOrCreateFactorForCustomer(factorId);
+    const factorData = await getOrCreateFactorForCustomer(factorId);
+    setFactor(factorData);
     setTotals({
-      totalPurchases: factor.totalPurchases,
-      totalPaid: factor.totalPaid,
-      balance: factor.balance,
+      totalPurchases: factorData.totalPurchases,
+      totalPaid: factorData.totalPaid,
+      balance: factorData.balance,
     });
 
     const [purchasesSnap, paymentsSnap] = await Promise.all([
@@ -47,9 +53,11 @@ export function AdminFactor() {
 
     const purchaseList: Purchase[] = purchasesSnap.docs.map((d) => {
       const data = d.data() as Record<string, unknown>;
+      const q = typeof data.quantity === 'number' && data.quantity >= 1 ? data.quantity : 1;
       return {
         id: d.id,
         description: (data.description as string) ?? '',
+        quantity: Math.floor(q),
         amount: typeof data.amount === 'number' ? data.amount : 0,
         date: (data.date as string) ?? '',
       };
@@ -80,6 +88,7 @@ export function AdminFactor() {
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
   const [purchaseForm, setPurchaseForm] = useState({
     description: '',
+    quantity: 1,
     amount: 0,
     date: new Date().toISOString().slice(0, 10),
   });
@@ -88,6 +97,7 @@ export function AdminFactor() {
     setEditingPurchaseId(null);
     setPurchaseForm({
       description: '',
+      quantity: 1,
       amount: 0,
       date: new Date().toISOString().slice(0, 10),
     });
@@ -98,6 +108,7 @@ export function AdminFactor() {
     setEditingPurchaseId(p.id);
     setPurchaseForm({
       description: p.description,
+      quantity: p.quantity ?? 1,
       amount: p.amount,
       date: p.date ? p.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
     });
@@ -110,6 +121,7 @@ export function AdminFactor() {
     try {
       const payload = {
         description: purchaseForm.description.trim(),
+        quantity: Math.max(1, Math.floor(Number(purchaseForm.quantity) || 1)),
         amount: round2(Number(purchaseForm.amount) || 0),
         date: new Date(purchaseForm.date).toISOString(),
       };
@@ -197,6 +209,59 @@ export function AdminFactor() {
     }
   };
 
+  const handlePrintInvoice = async () => {
+    if (!factorId || !factor) return;
+    setPrintLoading(true);
+    try {
+      const userSnap = await getDoc(doc(db, 'users', factorId));
+      const userData = userSnap.exists() ? (userSnap.data() as { name?: string; email?: string }) : {};
+      const settings = await getInvoiceSettings();
+      const companyInfo = {
+        name: settings.companyName,
+        address: settings.companyAddress,
+        phone: settings.companyPhone,
+        email: settings.companyEmail,
+        website: settings.companyWebsite,
+        currency: settings.currency,
+        footerText: settings.footerText,
+      };
+      const invoice = {
+        id: factor.id,
+        clientId: factor.customerId,
+        createdAt: factor.createdAt ?? new Date().toISOString(),
+      };
+      const client = {
+        name: userData.name ?? 'Customer',
+        email: userData.email ?? '',
+      };
+      const purchaseLines = purchases.map((p) => {
+        const qty = p.quantity ?? 1;
+        const total = p.amount;
+        const unitPrice = qty > 0 ? total / qty : total;
+        return {
+          item_name: p.description || '—',
+          quantity: qty,
+          unit_price: round2(unitPrice),
+          total_price: total,
+        };
+      });
+      const paymentLines = payments.map((p) => ({ amount: p.amount }));
+      const printLogoUrl = new URL(settings.logoUrl || '/logo.ico', window.location.href).toString();
+      const html = await generateInvoiceHTML(
+        invoice,
+        client,
+        purchaseLines,
+        paymentLines,
+        totals.balance,
+        companyInfo,
+        printLogoUrl,
+      );
+      openInvoiceInNewTab(html);
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
   function IconBack() {
     return (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
@@ -220,7 +285,7 @@ export function AdminFactor() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 border-t border-neutral-200 pt-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <button
@@ -238,21 +303,36 @@ export function AdminFactor() {
             {t('factor_admin_subtitle')}
           </p>
         </div>
-        <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-right">
-          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
-            {t('factor_total_purchases')}
-          </p>
-          <p className="mt-1 text-xl font-semibold text-black">{formatFactorAmount(totals.totalPurchases)}</p>
-          <p className="mt-3 text-xs font-medium uppercase tracking-wider text-neutral-500">
-            {t('factor_total_paid')}
-          </p>
-          <p className="mt-1 text-xl font-semibold text-black">{formatFactorAmount(totals.totalPaid)}</p>
-          <p className="mt-3 text-xs font-medium uppercase tracking-wider text-neutral-500">
-            {t('factor_balance')}
-          </p>
-          <p className="mt-1 text-xl font-semibold text-black">{formatFactorAmount(totals.balance)}</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          <button
+            type="button"
+            onClick={handlePrintInvoice}
+            disabled={printLoading || loading}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-black transition-colors hover:border-black hover:bg-neutral-50 disabled:opacity-50"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            {printLoading ? t('common_saving') : t('factor_print_invoice')}
+          </button>
+          <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-right">
+            <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+              {t('factor_total_purchases')}
+            </p>
+            <p className="mt-1 text-xl font-semibold text-black">{formatFactorAmount(totals.totalPurchases)}</p>
+            <p className="mt-3 text-xs font-medium uppercase tracking-wider text-neutral-500">
+              {t('factor_total_paid')}
+            </p>
+            <p className="mt-1 text-xl font-semibold text-black">{formatFactorAmount(totals.totalPaid)}</p>
+            <p className="mt-3 text-xs font-medium uppercase tracking-wider text-neutral-500">
+              {t('factor_balance')}
+            </p>
+            <p className="mt-1 text-xl font-semibold text-black">{formatFactorAmount(Math.max(0, totals.balance))}</p>
+          </div>
         </div>
       </div>
+
+      <div className="border-b border-neutral-200" aria-hidden />
 
       {loading ? (
         <div className="space-y-4">
@@ -280,7 +360,8 @@ export function AdminFactor() {
                 <thead>
                   <tr className="border-b border-neutral-200 bg-neutral-50 text-xs font-medium uppercase tracking-wider text-neutral-500">
                     <th className="px-4 py-3">{t('factor_table_date')}</th>
-                    <th className="px-4 py-3">{t('factor_table_description')}</th>
+                    <th className="px-4 py-3">{t('factor_table_item')}</th>
+                    <th className="px-4 py-3 text-right">{t('factor_table_quantity')}</th>
                     <th className="px-4 py-3 text-right">{t('factor_table_amount')}</th>
                     <th className="w-24 px-4 py-3 text-right">{t('common_actions')}</th>
                   </tr>
@@ -288,7 +369,7 @@ export function AdminFactor() {
                 <tbody>
                   {purchases.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-neutral-500">
+                      <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">
                         {t('factor_empty_purchases')}
                       </td>
                     </tr>
@@ -299,6 +380,7 @@ export function AdminFactor() {
                           {p.date ? new Date(p.date).toLocaleDateString() : '—'}
                         </td>
                         <td className="px-4 py-3 font-medium text-black">{p.description || '—'}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{p.quantity ?? 1}</td>
                         <td className="px-4 py-3 text-right tabular-nums">{p.amount.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-1">
@@ -420,14 +502,27 @@ export function AdminFactor() {
               </div>
               <div>
                 <label className="block text-xs font-medium uppercase tracking-wider text-neutral-500">
-                  {t('factor_table_description')}
+                  {t('factor_table_item')}
                 </label>
                 <input
                   type="text"
                   value={purchaseForm.description}
                   onChange={(e) => setPurchaseForm((f) => ({ ...f, description: e.target.value }))}
                   className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-black"
-                  placeholder={t('common_description_placeholder')}
+                  placeholder={t('factor_table_item_placeholder')}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium uppercase tracking-wider text-neutral-500">
+                  {t('factor_table_quantity')}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={purchaseForm.quantity}
+                  onChange={(e) => setPurchaseForm((f) => ({ ...f, quantity: Math.max(1, parseInt(e.target.value, 10) || 1) }))}
+                  className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-black"
                 />
               </div>
               <div>

@@ -6,6 +6,9 @@ import { AdminProjects } from './AdminProjects';
 import { AdminProjectWeeks } from './AdminProjectWeeks';
 import { AdminFactor } from './AdminFactor';
 import { AdminCustomers } from './AdminCustomers';
+import { AdminInvoiceSettings } from './AdminInvoiceSettings';
+import { Admin3DProjects } from './Admin3DProjects';
+import { Admin3DProjectScenes } from './Admin3DProjectScenes';
 
 export function AdminLayout() {
   const { t } = useTranslation();
@@ -13,7 +16,9 @@ export function AdminLayout() {
   const navItems = [
     { path: '', label: t('admin_nav_dashboard') },
     { path: 'projects', label: t('admin_nav_projects') },
+    { path: '3d', label: t('admin_nav_3d') },
     { path: 'customers', label: t('admin_nav_customers') },
+    { path: 'settings', label: t('admin_nav_settings') },
   ];
 
   return (
@@ -47,8 +52,11 @@ export function AdminLayout() {
               <Route index element={<AdminDashboardHome />} />
               <Route path="projects" element={<AdminProjects />} />
               <Route path="projects/:projectId/weeks" element={<AdminProjectWeeks />} />
+              <Route path="3d" element={<Admin3DProjects />} />
+              <Route path="3d/:projectId/scenes" element={<Admin3DProjectScenes />} />
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="customers/:customerId/factor" element={<AdminFactor />} />
+              <Route path="settings" element={<AdminInvoiceSettings />} />
             </Routes>
           </main>
         </div>

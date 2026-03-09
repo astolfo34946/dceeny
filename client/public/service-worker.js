@@ -30,14 +30,19 @@ self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   const reqUrl = new URL(url);
 
-  // Never cache API / Cloud Functions - always go to network (avoids CORS/opacity issues)
+  // Never cache API / Cloud Functions / Firebase Storage - always go to network (avoids CORS issues)
   if (
     url.includes('cloudfunctions.net') ||
     url.includes('firebaseapp.com') ||
+    url.includes('firebasestorage.googleapis.com') ||
     url.includes('supabase.co') ||
     url.includes('/api/')
   ) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return new Response(null, { status: 408, statusText: 'Network Error' });
+      })
+    );
     return;
   }
 

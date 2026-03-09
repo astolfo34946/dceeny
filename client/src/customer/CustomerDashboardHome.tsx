@@ -7,6 +7,7 @@ import { DashboardCards } from '../components/DashboardCards';
 export function CustomerDashboardHome() {
   const { user } = useAuth();
   const [is360Unlocked, setIs360Unlocked] = useState(false);
+  const [is3DUnlocked, setIs3DUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,6 +19,7 @@ export function CustomerDashboardHome() {
     getDocs(q).then((snap) => {
       const first = snap.docs[0];
       setIs360Unlocked(first ? (first.data() as { is360Unlocked?: boolean }).is360Unlocked === true : false);
+      setIs3DUnlocked(first ? (first.data() as { is3DUnlocked?: boolean }).is3DUnlocked === true : false);
       setLoading(false);
     });
   }, [user]);
@@ -37,8 +39,10 @@ export function CustomerDashboardHome() {
       factorHref="/app/factor"
       dceeny360Href="/app/360"
       is360Locked={!is360Unlocked}
+      is3DLocked={!is3DUnlocked}
       isAdmin={false}
       userName={firstName}
+      threeDHref="/app/3d"
     />
   );
 }

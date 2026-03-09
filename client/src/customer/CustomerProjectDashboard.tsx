@@ -115,49 +115,6 @@ export function CustomerProjectDashboard({ projectId }: Props) {
             <p className="text-sm text-neutral-600">{project.address}</p>
           )}
         </div>
-
-        <div className="mt-3 flex items-center gap-2 md:mt-0">
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">
-            Week
-          </span>
-          <div className="flex gap-1 overflow-x-auto rounded-full border border-neutral-200 bg-neutral-50 px-1 py-1 text-xs smooth-scrollbar">
-            {loadingScenes ? (
-              <div className="flex gap-1">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-7 w-16 animate-pulse rounded-full bg-neutral-200"
-                  />
-                ))}
-              </div>
-            ) : weeks.length === 0 ? (
-              <span className="px-3 text-xs text-neutral-500">
-                No weeks available yet.
-              </span>
-            ) : (
-              weeks.map((week) => (
-                <button
-                  key={week}
-                  type="button"
-                  onClick={() => {
-                    setActiveWeek(week);
-                    const firstScene = scenes.find(
-                      (s) => s.weekNumber === week,
-                    );
-                    if (firstScene) setActiveSceneId(firstScene.id);
-                  }}
-                  className={`flex h-7 items-center rounded-full px-3 transition-colors duration-150 ease-smooth ${
-                    activeWeek === week
-                      ? 'bg-black text-white'
-                      : 'bg-transparent text-neutral-800 hover:bg-neutral-200'
-                  }`}
-                >
-                  Week {week}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(220px,1fr)]">
@@ -182,7 +139,7 @@ export function CustomerProjectDashboard({ projectId }: Props) {
 
         <aside className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white/80 p-3 shadow-subtle backdrop-blur-sm">
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">
-            Rooms this week
+            Rooms
           </p>
           <div className="smooth-scrollbar flex max-h-[360px] flex-col gap-1 overflow-y-auto pr-1">
             {loadingScenes ? (
@@ -194,7 +151,7 @@ export function CustomerProjectDashboard({ projectId }: Props) {
               ))
             ) : scenesForWeek.length === 0 ? (
               <p className="text-xs text-neutral-500">
-                No rooms have been uploaded for this week yet.
+                No rooms have been uploaded yet.
               </p>
             ) : (
               scenesForWeek.map((scene) => (

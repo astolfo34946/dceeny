@@ -69,8 +69,8 @@ export async function recomputeFactorTotals(factorId: string): Promise<void> {
 
   const totalPurchasesRounded = Math.round(totalPurchases * 100) / 100;
   const totalPaidRounded = Math.round(totalPaid * 100) / 100;
-  // Balance is credit: total paid minus total purchases (can be negative).
-  const balance = Math.round((totalPaidRounded - totalPurchasesRounded) * 100) / 100;
+  // Balance = amount owed: total purchases minus total paid (negative = overpaid/credit).
+  const balance = Math.round((totalPurchasesRounded - totalPaidRounded) * 100) / 100;
 
   await setDoc(
     factorRef,

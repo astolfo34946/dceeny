@@ -8,15 +8,30 @@ declare global {
     pannellum: any;
   }
 }
-import type { SceneForEdit } from '../admin/AdminScenes';
 
 type HotspotType = 'circle' | 'arrow';
 
+export interface EditableHotspot {
+  pitch: number;
+  yaw: number;
+  targetSceneId: string;
+  type: HotspotType;
+  rotation?: number;
+}
+
+export interface EditableScene {
+  id: string;
+  imageUrl: string;
+  roomName: string;
+  order: number;
+  hotspots?: EditableHotspot[];
+}
+
 interface EditorPanoramaProps {
   projectId: string;
-  scene: SceneForEdit;
-  scenes: SceneForEdit[];
-  onChangeHotspots: (hotspots: SceneForEdit['hotspots']) => void;
+  scene: EditableScene;
+  scenes: EditableScene[];
+  onChangeHotspots: (hotspots: EditableHotspot[] | undefined) => void;
 }
 
 interface DraftHotspot {
@@ -312,7 +327,7 @@ export function EditorPanorama({
                 >
                   {scenes.map((s) => (
                     <option key={s.id} value={s.id}>
-                      W{s.weekNumber} · {s.roomName}
+                      {s.roomName}
                     </option>
                   ))}
                 </select>
