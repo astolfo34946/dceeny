@@ -57,8 +57,15 @@ export async function recomputeFactorTotals(factorId: string): Promise<void> {
 
   let totalPurchases = 0;
   purchasesSnap.forEach((d) => {
-    const data = d.data() as { amount?: number };
-    totalPurchases += typeof data.amount === 'number' ? data.amount : 0;
+    const data = d.data() as { amount?: number; quantity?: number; unitPrice?: number };
+    if (typeof data.amount === 'number') {
+      totalPurchases += data.amount;
+    } else if (
+      typeof data.quantity === 'number' &&
+      typeof data.unitPrice === 'number'
+    ) {
+      totalPurchases += Math.round(data.quantity * data.unitPrice * 100) / 100;
+    }
   });
 
   let totalPaid = 0;
@@ -69,8 +76,8 @@ export async function recomputeFactorTotals(factorId: string): Promise<void> {
 
   const totalPurchasesRounded = Math.round(totalPurchases * 100) / 100;
   const totalPaidRounded = Math.round(totalPaid * 100) / 100;
-  // Balance = amount owed: total purchases minus total paid (negative = overpaid/credit).
-  const balance = Math.round((totalPurchasesRounded - totalPaidRounded) * 100) / 100;
+  // Balance = Total Paid - Total Purchases (positive = credit, negative = amount owed).
+  const balance = Math.round((totalPaidRounded - totalPurchasesRounded) * 100) / 100;
 
   await setDoc(
     factorRef,

@@ -30,106 +30,130 @@ body {
   border-radius: 3px;
 }
 
-/* 360° Hotspots – circles and arrows (admin + customer views) */
-/* Anchored to yaw/pitch; fixed size; no scale with zoom. */
+/* 360° / 3D Hotspots – text buttons (admin + customer views) */
+/* Anchored to yaw/pitch; no scale with zoom. */
 
-/* Preserve Pannellum's position:absolute – do NOT override or hotspots will drift */
+/* Panorama viewer: let Pannellum own touch (avoids [Intervention] touchmove cancelable=false) */
+.pnlm-container {
+  touch-action: none;
+}
+
+/* Text-only hotspot: no background, stays anchored to yaw/pitch */
+.pnlm-hotspot-base.editor-hotspot-text {
+  box-sizing: border-box;
+  margin: 0;
+  cursor: pointer;
+  min-width: 0;
+  max-width: 180px;
+  height: auto;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  border: none;
+  box-shadow: none;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pnlm-hotspot-base.editor-hotspot-text:hover {
+  opacity: 0.9;
+}
+
+/* Show button text inside hotspot (override Pannellum tooltip: keep text in the button, always visible) */
+.pnlm-hotspot-base.editor-hotspot-text span {
+  display: inline !important;
+  visibility: visible !important;
+  position: static !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  width: auto !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff !important;
+  text-shadow: 0 0 2px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.9);
+}
+
+/* Legacy classes: keep minimal so old configs don’t break; same as text button */
 .pnlm-hotspot-base.editor-hotspot-circle,
 .pnlm-hotspot-base.editor-hotspot-arrow {
   box-sizing: border-box;
   margin: 0;
-}
-
-/* Circle hotspot: perfect circle, white fill, soft glow, fixed size */
-.pnlm-hotspot-base.editor-hotspot-circle {
-  width: 32px;
-  height: 32px;
   cursor: pointer;
+  min-width: 0;
+  max-width: 180px;
+  height: auto;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  border: none;
+  box-shadow: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pnlm-hotspot-base.editor-hotspot-circle::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 32px;
-  height: 32px;
-  margin-left: -16px;
-  margin-top: -16px;
-  border-radius: 50%;
-  border: 1px solid rgba(128, 128, 128, 0.4);
-  background: #ffffff;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.08),
-    0 0 12px 4px rgba(255, 255, 255, 0.35),
-    0 2px 4px rgba(0, 0, 0, 0.12);
-  transform: translate(-50%, -50%);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.pnlm-hotspot-base.editor-hotspot-circle:hover::before {
-  transform: translate(-50%, -50%) scale(1.05);
-  box-shadow:
-    0 0 0 1px rgba(128, 128, 128, 0.3),
-    0 0 18px 6px rgba(255, 255, 255, 0.5),
-    0 2px 6px rgba(0, 0, 0, 0.18);
-}
-
-/* Arrow hotspot: black box, white arrow rotates inside (direction only) */
-.pnlm-hotspot-base.editor-hotspot-arrow {
-  width: 38px;
-  height: 38px;
-  cursor: pointer;
-}
-
-/* Black background box – centered, subtle (semi-transparent) and fixed, no rotation */
-.pnlm-hotspot-base.editor-hotspot-arrow::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 38px;
-  height: 38px;
-  background: rgba(0, 0, 0, 0.55);
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-  transform: translate(-50%, -50%);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.pnlm-hotspot-base.editor-hotspot-arrow:hover::before {
-  transform: translate(-50%, -50%) scale(1.05);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
-}
-
-/* White arrow icon – only this rotates with direction */
+.pnlm-hotspot-base.editor-hotspot-circle::before,
+.pnlm-hotspot-base.editor-hotspot-arrow::before,
 .pnlm-hotspot-base.editor-hotspot-arrow::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 20px;
-  height: 20px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E");
-  background-size: 20px 20px;
-  background-position: center;
-  background-repeat: no-repeat;
-  transform: translate(-50%, -50%) rotate(var(--arrow-rotation, 0deg));
-  transition: filter 0.2s ease;
+  display: none !important;
 }
 
-.pnlm-hotspot-base.editor-hotspot-arrow:hover::after {
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
-}
-
-/* Hide empty span so it doesn't affect hotspot layout */
 .pnlm-hotspot-base.editor-hotspot-circle span,
 .pnlm-hotspot-base.editor-hotspot-arrow span {
-  display: none;
+  display: inline !important;
+  visibility: visible !important;
+  position: static !important;
+  margin: 0 !important;
+  width: auto !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff !important;
+  text-shadow: 0 0 2px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.9);
 }
 
 /* Hide Pannellum's tiny built-in fullscreen icon – we render our own larger button */
 .pnlm-fullscreen-toggle-button {
+  display: none !important;
+}
+
+/* Hide Pannellum's panorama info box (title/author) */
+.pnlm-panorama-info {
+  display: none !important;
+}
+
+/* 360 viewer: no loading text, no spinner, no blank frames – instant transitions only */
+.pnlm-load-box,
+.pnlm-lbox {
+  display: none !important;
+}
+
+/* VR stereo view: hide zoom/fullscreen so only panorama is visible */
+[data-vr] .pnlm-zoom-controls,
+[data-vr] .pnlm-controls-container,
+[data-vr] .pnlm-fullscreen-toggle-button {
   display: none !important;
 }
 

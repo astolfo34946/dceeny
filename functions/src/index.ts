@@ -19,12 +19,12 @@ cloudinary.config({
 
 export const getCloudinarySignature = onCall(
   { cors: true },
-  async (request: CallableRequest<{ projectId?: string; fileName?: string }>) => {
+  async (request: CallableRequest<{ projectId?: string; fileName?: string; subFolder?: string }>) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentication required.');
     }
 
-    const { projectId, fileName } = request.data || {};
+    const { projectId, fileName, subFolder } = request.data || {};
 
     if (!projectId || !fileName) {
       throw new HttpsError(
@@ -34,7 +34,9 @@ export const getCloudinarySignature = onCall(
     }
 
     const timestamp = Math.round(Date.now() / 1000);
-    const folder = `projects/${projectId}`;
+    const folder = subFolder
+      ? `projects/${projectId}/${subFolder}`
+      : `projects/${projectId}`;
 
     const signature = cloudinary.utils.api_sign_request(
       {
@@ -49,6 +51,7 @@ export const getCloudinarySignature = onCall(
       signature,
       apiKey: process.env.CLOUDINARY_API_KEY,
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      folder,
     };
   },
 );

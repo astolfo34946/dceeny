@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
 import { db } from '../lib/firebase';
 import { useCustomerProject } from '../lib/useCustomerProject';
 import { useAuth } from '../auth/AuthContext';
-import { WeekPanoramaViewer } from '../viewer/WeekPanoramaViewer';
-import type { Week } from '../types/app';
+import { ReadOnlyPanorama } from '../viewer/ReadOnlyPanorama';
+import type { Week, WeekScene } from '../types/app';
 
 export function Customer360Viewer() {
   const { t } = useTranslation();
@@ -54,6 +54,38 @@ export function Customer360Viewer() {
     setActiveSceneIndex(mainIndex >= 0 ? mainIndex : 0);
   }, [week]);
 
+  // All hooks must run before any early return.
+  const scenes = week?.scenes ?? [];
+  const hasScenes = scenes.length > 0 && scenes.every((s) => s.imageUrl);
+  const panoScenes = useMemo(
+    () =>
+      scenes.map((s: WeekScene, i: number) => ({
+        id: `scene_${i}`,
+        imageUrl: s.imageUrl,
+        roomName: s.roomName,
+        weekNumber: 1,
+        order: i,
+        hotspots: s.hotspots?.map((h) => {
+          const idx =
+            typeof h.targetSceneIndex === 'number' && h.targetSceneIndex >= 0 && h.targetSceneIndex < scenes.length
+              ? h.targetSceneIndex
+              : 0;
+          return {
+            pitch: h.pitch,
+            yaw: h.yaw,
+            targetSceneId: `scene_${idx}`,
+            type: h.type as 'circle' | 'arrow',
+            rotation: h.rotation ?? 0,
+            label: h.label,
+          };
+        }),
+      })),
+    [scenes],
+  );
+  const scenesLength = scenes.length;
+  const safeIndex = Math.min(activeSceneIndex, Math.max(0, scenesLength > 0 ? scenesLength - 1 : 0));
+  const initialSceneId = `scene_${safeIndex}`;
+
   if (projectLoading || loadingWeek || !week) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -61,9 +93,6 @@ export function Customer360Viewer() {
       </div>
     );
   }
-
-  const scenes = week.scenes || [];
-  const hasScenes = scenes.length > 0 && scenes.every((s) => s.imageUrl);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-neutral-50">
@@ -105,18 +134,23 @@ export function Customer360Viewer() {
       >
         {hasScenes ? (
           <>
-            {/* 360 viewer - left, takes remaining space */}
-            <div className="relative flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-black shadow-lg min-h-[320px] h-[55vh] md:min-h-[420px] md:h-[65vh]">
-              <WeekPanoramaViewer
-                scenes={scenes}
-                initialSceneIndex={activeSceneIndex}
-                onSceneIndexChange={setActiveSceneIndex}
-              />
-            </div>
-
-            {/* Rooms list - right, fixed width */}
-            <aside className="mt-4 w-full shrink-0 md:mt-0 md:w-80">
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            {/* Same container and component as 3D viewer for reliable Android */}
+            <div className="grid w-full gap-4 md:grid-cols-[minmax(0,3fr)_minmax(220px,1fr)]">
+              <div
+                data-viewer-root
+                className="relative min-h-[320px] overflow-hidden rounded-2xl border border-neutral-200 bg-black shadow-lg md:min-h-[520px]"
+              >
+                <ReadOnlyPanorama
+                  projectId={project?.id ?? weekId}
+                  scenes={panoScenes}
+                  initialSceneId={initialSceneId}
+                  onSceneChange={(id) => {
+                  const idx = id.startsWith('scene_') ? parseInt(id.slice(6), 10) : parseInt(id, 10);
+                  setActiveSceneIndex(Number.isNaN(idx) ? 0 : idx);
+                }}
+                />
+              </div>
+              <aside className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
                 <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
                   {t('customer_360_rooms_title')}
                 </h2>
@@ -151,8 +185,8 @@ export function Customer360Viewer() {
                     </li>
                   ))}
                 </ul>
-              </div>
-            </aside>
+              </aside>
+            </div>
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center rounded-2xl border border-neutral-200 bg-white py-16 text-center">

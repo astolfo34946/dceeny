@@ -9,6 +9,7 @@ import { AdminCustomers } from './AdminCustomers';
 import { AdminInvoiceSettings } from './AdminInvoiceSettings';
 import { Admin3DProjects } from './Admin3DProjects';
 import { Admin3DProjectScenes } from './Admin3DProjectScenes';
+import { Admin3DProjectGallery } from './Admin3DProjectGallery';
 
 export function AdminLayout() {
   const { t } = useTranslation();
@@ -54,6 +55,7 @@ export function AdminLayout() {
               <Route path="projects/:projectId/weeks" element={<AdminProjectWeeks />} />
               <Route path="3d" element={<Admin3DProjects />} />
               <Route path="3d/:projectId/scenes" element={<Admin3DProjectScenes />} />
+              <Route path="3d/:projectId/gallery" element={<Admin3DProjectGallery />} />
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="customers/:customerId/factor" element={<AdminFactor />} />
               <Route path="settings" element={<AdminInvoiceSettings />} />

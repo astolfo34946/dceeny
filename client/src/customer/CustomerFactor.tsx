@@ -33,12 +33,16 @@ export function CustomerFactor() {
 
     const purchaseList: Purchase[] = purchasesSnap.docs.map((d) => {
       const data = d.data() as Record<string, unknown>;
-      const q = typeof data.quantity === 'number' && data.quantity >= 1 ? data.quantity : 1;
+      const q = typeof data.quantity === 'number' && data.quantity >= 0 ? data.quantity : 1;
+      const up = typeof data.unitPrice === 'number' ? data.unitPrice : 0;
+      const amt = typeof data.amount === 'number' ? data.amount : q * up;
       return {
         id: d.id,
         description: (data.description as string) ?? '',
-        quantity: Math.floor(q),
-        amount: typeof data.amount === 'number' ? data.amount : 0,
+        quantity: q,
+        unit: (data.unit as Purchase['unit']) ?? 'unit',
+        unitPrice: up,
+        amount: amt,
         date: (data.date as string) ?? '',
       };
     });
@@ -86,11 +90,12 @@ export function CustomerFactor() {
       };
       const purchaseLines = purchases.map((p) => {
         const qty = p.quantity ?? 1;
-        const total = p.amount;
-        const unitPrice = qty > 0 ? total / qty : total;
+        const unitPrice = p.unitPrice ?? (qty > 0 ? p.amount / qty : 0);
+        const total = Math.round(qty * unitPrice * 100) / 100;
         return {
           item_name: p.description || '—',
           quantity: qty,
+          unit: p.unit ?? 'unit',
           unit_price: Math.round(unitPrice * 100) / 100,
           total_price: total,
         };
@@ -169,7 +174,7 @@ export function CustomerFactor() {
             {t('factor_balance')}
           </p>
           <p className="mt-2 text-2xl font-semibold text-black">
-            {formatFactorAmount(Math.max(0, factor?.balance ?? 0))}
+            {formatFactorAmount(factor?.balance ?? 0)}
           </p>
         </div>
       </div>
@@ -197,16 +202,21 @@ export function CustomerFactor() {
                   </td>
                 </tr>
               ) : (
-                purchases.map((p) => (
+                purchases.map((p) => {
+                  const q = p.quantity ?? 1;
+                  const u = p.unit ?? 'unit';
+                  const qtyLabel = u === 'unit' ? String(q) : `${q} ${u}`;
+                  return (
                   <tr key={p.id} className="border-b border-neutral-100 last:border-0">
                     <td className="px-4 py-3 text-neutral-700">
                       {p.date ? new Date(p.date).toLocaleDateString() : '—'}
                     </td>
                     <td className="px-4 py-3 font-medium text-black">{p.description || '—'}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{p.quantity ?? 1}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{qtyLabel}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{formatFactorAmount(p.amount)}</td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -12,14 +12,19 @@ export function CustomerDashboardHome() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
+    const projectsQ = query(
       collection(db, 'projects'),
-      where('customerId', '==', user.id)
+      where('customerId', '==', user.id),
     );
-    getDocs(q).then((snap) => {
-      const first = snap.docs[0];
-      setIs360Unlocked(first ? (first.data() as { is360Unlocked?: boolean }).is360Unlocked === true : false);
-      setIs3DUnlocked(first ? (first.data() as { is3DUnlocked?: boolean }).is3DUnlocked === true : false);
+    const projects3dQ = query(
+      collection(db, 'projects3d'),
+      where('customerId', '==', user.id),
+    );
+    Promise.all([getDocs(projectsQ), getDocs(projects3dQ)]).then(([projSnap, proj3dSnap]) => {
+      const first360 = projSnap.docs[0];
+      const first3d = proj3dSnap.docs[0];
+      setIs360Unlocked(first360 ? (first360.data() as { is360Unlocked?: boolean }).is360Unlocked === true : false);
+      setIs3DUnlocked(first3d ? (first3d.data() as { is3DUnlocked?: boolean }).is3DUnlocked === true : false);
       setLoading(false);
     });
   }, [user]);

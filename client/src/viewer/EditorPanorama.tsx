@@ -17,6 +17,7 @@ export interface EditableHotspot {
   targetSceneId: string;
   type: HotspotType;
   rotation?: number;
+  label?: string;
 }
 
 export interface EditableScene {
@@ -40,6 +41,7 @@ interface DraftHotspot {
   targetSceneId: string;
   type: HotspotType;
   rotation?: number;
+  label?: string;
 }
 
 export function EditorPanorama({
@@ -81,31 +83,17 @@ export function EditorPanorama({
           yaw: 120,
           hfov: 100,
           hotSpots: (draftHotspots ?? []).map((h, idx) => {
-            const rotation = h.rotation ?? 0;
-            const spot: Record<string, unknown> = {
+            const targetRoom = scenes.find((s) => s.id === h.targetSceneId)?.roomName ?? 'Room';
+            const text = (h.label ?? '').trim() || targetRoom;
+            return {
               pitch: h.pitch,
               yaw: h.yaw,
-              text: '',
-              type: h.type === 'arrow' ? 'scene' : 'info',
-              sceneId: h.type === 'arrow' ? h.targetSceneId : undefined,
-              rotation,
-              cssClass:
-                h.type === 'arrow'
-                  ? 'editor-hotspot-arrow'
-                  : 'editor-hotspot-circle',
-              clickHandlerFunc: () => {
-                setSelectedIndex(idx);
-              },
+              text,
+              type: 'scene' as const,
+              sceneId: h.targetSceneId,
+              cssClass: 'editor-hotspot-text',
+              clickHandlerFunc: () => setSelectedIndex(idx),
             };
-            if (h.type === 'arrow') {
-              spot.createTooltipFunc = (div: HTMLElement, args: { rotation?: number }) => {
-                if (args && typeof args.rotation === 'number') {
-                  div.style.setProperty('--arrow-rotation', String(args.rotation) + 'deg');
-                }
-              };
-              spot.createTooltipArgs = { rotation };
-            }
-            return spot;
           }),
         },
       },
@@ -137,7 +125,7 @@ export function EditorPanorama({
     function handleMouseDown(e: MouseEvent) {
       if (selectedIndex == null || !viewerRef.current) return;
       const target = e.target as HTMLElement;
-      if (!target.classList.contains('editor-hotspot-circle')) return;
+      if (!target.classList.contains('editor-hotspot-text')) return;
       setIsDragging(true);
       e.preventDefault();
     }
@@ -281,49 +269,19 @@ export function EditorPanorama({
                 >
                   {idx + 1}
                 </button>
-                <select
-                  value={h.type}
-                  onChange={(e) =>
-                    updateHotspot(idx, {
-                      type: e.target.value as HotspotType,
-                    })
-                  }
-                  className="rounded border border-neutral-700 bg-transparent px-1 py-0.5 text-[10px] uppercase tracking-[0.18em]"
-                >
-                  <option value="circle">{t('hotspot_type_circle')}</option>
-                  <option value="arrow">{t('hotspot_type_arrow')}</option>
-                </select>
-                {h.type === 'arrow' && (
-                  <select
-                    value={
-                      (() => {
-                        const r = h.rotation ?? 0;
-                        const normalized = ((Math.round(r / 30) * 30) % 360 + 360) % 360;
-                        return normalized === 0 ? 12 : normalized / 30;
-                      })()
-                    }
-                    onChange={(e) => {
-                      const clock = Number(e.target.value);
-                      updateHotspot(idx, {
-                        rotation: clock === 12 ? 0 : clock * 30,
-                      });
-                    }}
-                    className="rounded border border-neutral-700 bg-transparent px-1 py-0.5 text-[10px] uppercase tracking-[0.18em]"
-                    title={t('hotspot_arrow_direction_clock')}
-                  >
-                    {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour) => (
-                      <option key={hour} value={hour}>
-                        {hour} {t('hotspot_clock_oclock')}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <input
+                  type="text"
+                  value={h.label ?? ''}
+                  onChange={(e) => updateHotspot(idx, { label: e.target.value })}
+                  placeholder={scenes.find((s) => s.id === h.targetSceneId)?.roomName ?? 'Room'}
+                  className="min-w-0 flex-1 rounded border border-neutral-600 bg-neutral-800 px-2 py-1 text-[10px] text-white placeholder:text-neutral-500"
+                />
                 <select
                   value={h.targetSceneId}
                   onChange={(e) =>
                     updateHotspot(idx, { targetSceneId: e.target.value })
                   }
-                  className="flex-1 rounded border border-neutral-700 bg-transparent px-1 py-0.5 text-[10px]"
+                  className="min-w-[100px] rounded border border-neutral-600 bg-neutral-800 px-1 py-0.5 text-[10px] text-white"
                 >
                   {scenes.map((s) => (
                     <option key={s.id} value={s.id}>

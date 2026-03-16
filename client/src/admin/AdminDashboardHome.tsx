@@ -4,19 +4,22 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
 import { db } from '../lib/firebase';
+import { PROJECTS_3D_COLLECTION } from '../lib/useCustomerProject';
 
 export function AdminDashboardHome() {
   const { user } = useAuth();
   const firstName = user?.name?.trim().split(/\s+/)[0] || undefined;
   const [customerCount, setCustomerCount] = useState<number | null>(null);
   const [projectCount, setProjectCount] = useState<number | null>(null);
+  const [project3dCount, setProject3dCount] = useState<number | null>(null);
   const { t } = useTranslation();
 
   useEffect(() => {
     (async () => {
-      const [usersSnap, projectsSnap] = await Promise.all([
+      const [usersSnap, projectsSnap, projects3dSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
         getDocs(collection(db, 'projects')),
+        getDocs(collection(db, PROJECTS_3D_COLLECTION)),
       ]);
       let customers = 0;
       usersSnap.forEach((d) => {
@@ -24,6 +27,7 @@ export function AdminDashboardHome() {
       });
       setCustomerCount(customers);
       setProjectCount(projectsSnap.size);
+      setProject3dCount(projects3dSnap.size);
     })();
   }, []);
 
@@ -101,7 +105,7 @@ export function AdminDashboardHome() {
               {t('admin_dashboard_3d_label')}
             </p>
             <p className="mt-1 text-2xl font-semibold text-black">
-              {projectCount ?? '—'}
+              {project3dCount ?? '—'}
             </p>
             <p className="mt-0.5 text-xs text-neutral-500">
               {t('admin_dashboard_3d_helper')}

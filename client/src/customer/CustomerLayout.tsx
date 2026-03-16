@@ -5,6 +5,7 @@ import { CustomerFactor } from './CustomerFactor';
 import { Customer360Weeks } from './Customer360Weeks';
 import { Customer360Viewer } from './Customer360Viewer';
 import { Customer3D } from './Customer3D';
+import { IOSViewerFullscreenWrapper } from './IOSViewerFullscreenWrapper';
 
 export function CustomerLayout() {
   return (
@@ -15,8 +16,22 @@ export function CustomerLayout() {
           <Route index element={<CustomerDashboardHome />} />
           <Route path="factor" element={<CustomerFactor />} />
           <Route path="360" element={<Customer360Weeks />} />
-          <Route path="360/weeks/:weekId" element={<Customer360Viewer />} />
-          <Route path="3d" element={<Customer3D />} />
+          <Route
+            path="360/weeks/:weekId"
+            element={
+              <IOSViewerFullscreenWrapper isViewerRoute>
+                <Customer360Viewer />
+              </IOSViewerFullscreenWrapper>
+            }
+          />
+          <Route
+            path="3d"
+            element={
+              <IOSViewerFullscreenWrapper isViewerRoute>
+                <Customer3D />
+              </IOSViewerFullscreenWrapper>
+            }
+          />
         </Routes>
       </main>
     </div>

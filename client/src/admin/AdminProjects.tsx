@@ -128,6 +128,18 @@ export function AdminProjects() {
     }
   }
 
+  async function handleUpdateProject(projectId: string, updates: { name?: string; address?: string }) {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'projects', projectId), updates);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, ...updates } : p))
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -176,7 +188,8 @@ export function AdminProjects() {
       </form>
 
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-        <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto_auto] gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-medium uppercase tracking-wider text-neutral-500">
+        {/* Desktop: table header */}
+        <div className="hidden border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-medium uppercase tracking-wider text-neutral-500 md:grid md:grid-cols-[1fr_1fr_1fr_auto_auto_auto] md:gap-3">
           <div>{t('admin_projects_table_name')}</div>
           <div>{t('admin_projects_table_address')}</div>
           <div>{t('admin_projects_table_customer')}</div>
@@ -199,18 +212,54 @@ export function AdminProjects() {
             {projects.map((p) => (
               <li
                 key={p.id}
-                className="grid grid-cols-[1fr_1fr_1fr_auto_auto_auto] items-center gap-3 px-4 py-3 text-sm"
+                className="grid grid-cols-1 gap-3 px-4 py-4 text-sm md:grid-cols-[1fr_1fr_1fr_auto_auto_auto] md:items-center md:py-3"
               >
-                <div className="font-medium text-black">{p.name}</div>
-                <div className="text-neutral-600">{p.address || '—'}</div>
+                <div className="md:min-w-0">
+                  <span className="text-xs font-medium uppercase text-neutral-500 md:hidden">{t('admin_projects_table_name')}</span>
+                  <input
+                    type="text"
+                    value={p.name}
+                    onChange={(e) =>
+                      setProjects((prev) =>
+                        prev.map((proj) => (proj.id === p.id ? { ...proj, name: e.target.value } : proj))
+                      )
+                    }
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (v !== (p.name || '')) handleUpdateProject(p.id, { name: v });
+                    }}
+                    disabled={saving}
+                    className="mt-0.5 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm font-medium text-black outline-none focus:border-black md:mt-0"
+                  />
+                </div>
+                <div className="md:min-w-0">
+                  <span className="text-xs font-medium uppercase text-neutral-500 md:hidden">{t('admin_projects_table_address')}</span>
+                  <input
+                    type="text"
+                    value={p.address || ''}
+                    onChange={(e) =>
+                      setProjects((prev) =>
+                        prev.map((proj) => (proj.id === p.id ? { ...proj, address: e.target.value } : proj))
+                      )
+                    }
+                    onBlur={(e) => {
+                      const v = e.target.value.trim() || undefined;
+                      if (v !== (p.address || '')) handleUpdateProject(p.id, { address: v || undefined });
+                    }}
+                    disabled={saving}
+                    placeholder="—"
+                    className="mt-0.5 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-600 outline-none focus:border-black md:mt-0"
+                  />
+                </div>
                 <div>
+                  <span className="text-xs font-medium uppercase text-neutral-500 md:hidden">{t('admin_projects_table_customer')}</span>
                   <select
                     value={p.customerId ?? ''}
                     onChange={(e) =>
                       handleAssignCustomer(p.id, e.target.value || null)
                     }
                     disabled={saving}
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-black"
+                    className="mt-0.5 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-black md:mt-0"
                   >
                     <option value="">{t('admin_projects_not_assigned')}</option>
                     {customers.map((c) => (
@@ -239,20 +288,22 @@ export function AdminProjects() {
                     />
                   </button>
                 </div>
-                <Link
-                  to={`/admin/projects/${p.id}/weeks`}
-                  className="text-xs font-medium uppercase tracking-wider text-black hover:underline"
-                >
-                  {t('admin_projects_weeks_link')}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(p.id)}
-                  disabled={saving}
-                  className="text-xs text-neutral-500 hover:text-red-600 disabled:opacity-50"
-                >
-                  {t('admin_projects_delete')}
-                </button>
+                <div className="flex flex-wrap items-center gap-2 border-t border-neutral-100 pt-3 md:border-t-0 md:pt-0">
+                  <Link
+                    to={`/admin/projects/${p.id}/weeks`}
+                    className="text-xs font-medium uppercase tracking-wider text-black hover:underline"
+                  >
+                    {t('admin_projects_weeks_link')}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p.id)}
+                    disabled={saving}
+                    className="text-xs text-neutral-500 hover:text-red-600 disabled:opacity-50"
+                  >
+                    {t('admin_projects_delete')}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

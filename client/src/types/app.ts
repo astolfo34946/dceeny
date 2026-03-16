@@ -9,10 +9,18 @@ export interface Factor {
   balance: number;
 }
 
+/** Unit type for invoice line items. */
+export type PurchaseUnit = 'unit' | 'm' | 'm2';
+
 export interface Purchase {
   id: string;
   description: string;
   quantity: number;
+  /** Unit of measure: unit, m, or m2 */
+  unit?: PurchaseUnit;
+  /** Unit price (prix). Line total = quantity * unitPrice. */
+  unitPrice?: number;
+  /** Line total (quantity × unitPrice). Stored for factor totals. */
   amount: number;
   date: string;
 }
@@ -56,6 +64,14 @@ export interface Project {
   customerId: string | null;
   is360Unlocked: boolean;
   is3DUnlocked: boolean;
+  /** Optional project gallery (normal photos, not panoramas). Stored as ordered array in Firestore. */
+  gallery?: ProjectGalleryImage[];
+}
+
+export interface ProjectGalleryImage {
+  url: string;
+  caption?: string;
+  createdAt?: string;
 }
 
 export interface SceneHotspot {
@@ -64,6 +80,8 @@ export interface SceneHotspot {
   targetSceneIndex?: number;
   type: 'circle' | 'arrow';
   rotation?: number;
+  /** Optional custom label for the button (defaults to target room name). */
+  label?: string;
 }
 
 export interface WeekScene {

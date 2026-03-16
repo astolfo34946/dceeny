@@ -22,6 +22,7 @@ export interface ClientPrintData {
 export interface PurchaseLinePrint {
   item_name: string;
   quantity: number;
+  unit?: string;
   unit_price: number;
   total_price: number;
 }
@@ -96,7 +97,8 @@ export async function generateInvoiceHTML(
 ): Promise<string> {
   const totalPurchases = purchases.reduce((sum, p) => sum + p.total_price, 0);
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const amountDue = Math.max(0, totalPurchases - totalPaid);
+  // Balance = Total Paid - Total Purchases (negative when owed, positive when credit).
+  const balance = totalPaid - totalPurchases;
   const currency = companyInfo.currency ?? FACTOR_CURRENCY;
   const companyName = escapeHtml(companyInfo.name ?? companyInfo.companyName ?? '');
   const companyAddress = escapeHtml(companyInfo.address ?? '');
@@ -118,12 +120,14 @@ export async function generateInvoiceHTML(
       ? (await tryFetchAsDataUrl(logoUrlTrimmed)) ?? logoUrlTrimmed
       : logoUrlTrimmed;
 
+  const qtyLabel = (p: PurchaseLinePrint) =>
+    p.unit && p.unit !== 'unit' ? `${p.quantity} ${p.unit}` : String(p.quantity);
   const rows = purchases
     .map(
       (p) => `
     <tr>
       <td>${escapeHtml(p.item_name)}</td>
-      <td class="text-right">${p.quantity}</td>
+      <td class="text-right">${escapeHtml(qtyLabel(p))}</td>
       <td class="text-right">${formatCurrency(p.unit_price, currency)}</td>
       <td class="text-right">${formatCurrency(p.total_price, currency)}</td>
     </tr>`,
@@ -134,11 +138,11 @@ export async function generateInvoiceHTML(
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Invoice ${invoiceId}</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 16px; font-family: system-ui, sans-serif; font-size: 14px; color: #111; background: #f5f5f5; }
+    body { margin: 0; padding: 16px; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; color: #111; background: #f5f5f5; -webkit-text-size-adjust: 100%; }
     .invoice-toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
     .invoice-toolbar button { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #ccc; background: #fff; }
     .invoice-toolbar button.primary { background: #111; color: #fff; border-color: #111; }
@@ -165,7 +169,7 @@ export async function generateInvoiceHTML(
     .totals td:first-child { color: #666; }
     .invoice-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; text-align: center; color: #666; font-size: 13px; }
     @media print {
-      body { background: #fff; padding: 0; }
+      body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .invoice-toolbar { display: none !important; }
       body * { visibility: hidden; }
       .invoice-page-wrap, #invoice, #invoice * { visibility: visible; }
@@ -177,9 +181,20 @@ export async function generateInvoiceHTML(
 </head>
 <body>
   <div class="invoice-toolbar">
-    <button type="button" class="primary" onclick="window.print()">Print</button>
+    <button type="button" class="primary" id="invoice-print-btn">Print</button>
     <button type="button" onclick="window.close()">Close</button>
   </div>
+  <script>
+    (function() {
+      var btn = document.getElementById('invoice-print-btn');
+      if (btn) btn.addEventListener('click', function() {
+        var ua = navigator.userAgent;
+        var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (isIOS) setTimeout(function() { window.print(); }, 350);
+        else window.print();
+      });
+    })();
+  </script>
   <div class="invoice-page-wrap">
     <div id="invoice">
       <div class="invoice-divider"></div>
@@ -206,7 +221,7 @@ export async function generateInvoiceHTML(
         <thead>
           <tr>
             <th>Item</th>
-            <th class="text-right">Qty</th>
+            <th class="text-right">Qty / Unit</th>
             <th class="text-right">Unit Price</th>
             <th class="text-right">Total</th>
           </tr>
@@ -216,7 +231,7 @@ export async function generateInvoiceHTML(
       <table class="totals">
         <tr><td>Total Purchases</td><td class="text-right">${formatCurrency(totalPurchases, currency)}</td></tr>
         <tr><td>Total Paid</td><td class="text-right">${formatCurrency(totalPaid, currency)}</td></tr>
-        <tr><td>Balance</td><td class="text-right">${formatCurrency(amountDue, currency)}</td></tr>
+        <tr><td>Balance</td><td class="text-right">${formatCurrency(balance, currency)}</td></tr>
       </table>
       <div class="invoice-footer">${footerText}</div>
     </div>

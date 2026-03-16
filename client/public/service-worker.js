@@ -3,9 +3,7 @@ const ASSETS = ['/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    }),
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {})
   );
   self.skipWaiting();
 });
@@ -59,17 +57,25 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
           return res;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || Response.error())),
+        .catch(() => {
+          return caches.match(event.request).then((cached) => {
+            if (cached) return cached;
+            return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+          }).catch(() => new Response('Offline', { status: 503, statusText: 'Service Unavailable' }));
+        })
     );
     return;
   }
 
-  // Everything else: cache-first.
+  // Everything else: cache-first; avoid unhandled rejection if fetch fails.
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request)),
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).catch(() => new Response(null, { status: 408, statusText: 'Network Error' }));
+    }).catch(() => new Response(null, { status: 408, statusText: 'Network Error' }))
   );
 });
 

@@ -12,6 +12,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { db } from '../lib/firebase';
+import { PROJECTS_3D_COLLECTION } from '../lib/useCustomerProject';
 import type { Project } from '../types/app';
 
 interface CustomerOption {
@@ -32,14 +33,14 @@ export function Admin3DProjects() {
   useEffect(() => {
     async function load() {
       const [projSnap, userSnap] = await Promise.all([
-        getDocs(query(collection(db, 'projects'), orderBy('name', 'asc'))),
+        getDocs(query(collection(db, PROJECTS_3D_COLLECTION), orderBy('name', 'asc'))),
         getDocs(collection(db, 'users')),
       ]);
       setProjects(
         projSnap.docs.map((d) => ({
           id: d.id,
           ...d.data(),
-          is360Unlocked: d.data().is360Unlocked === true,
+          is360Unlocked: false,
           is3DUnlocked: d.data().is3DUnlocked === true,
         })) as (Project & { id: string })[],
       );
@@ -65,11 +66,10 @@ export function Admin3DProjects() {
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      const ref = await addDoc(collection(db, 'projects'), {
+      const ref = await addDoc(collection(db, PROJECTS_3D_COLLECTION), {
         name: newName.trim(),
         address: newAddress.trim() || null,
         customerId: null,
-        is360Unlocked: false,
         is3DUnlocked: false,
         createdAt: new Date().toISOString(),
       });
@@ -94,7 +94,7 @@ export function Admin3DProjects() {
   async function handleAssignCustomer(projectId: string, customerId: string | null) {
     setSaving(true);
     try {
-      await updateDoc(doc(db, 'projects', projectId), { customerId });
+      await updateDoc(doc(db, PROJECTS_3D_COLLECTION, projectId), { customerId });
       setProjects((prev) =>
         prev.map((p) => (p.id === projectId ? { ...p, customerId } : p)),
       );
@@ -106,7 +106,7 @@ export function Admin3DProjects() {
   async function handleToggle3D(projectId: string, value: boolean) {
     setSaving(true);
     try {
-      await updateDoc(doc(db, 'projects', projectId), { is3DUnlocked: value });
+      await updateDoc(doc(db, PROJECTS_3D_COLLECTION, projectId), { is3DUnlocked: value });
       setProjects((prev) =>
         prev.map((p) => (p.id === projectId ? { ...p, is3DUnlocked: value } : p)),
       );
@@ -119,8 +119,20 @@ export function Admin3DProjects() {
     if (!window.confirm(t('admin_projects_delete_confirm'))) return;
     setSaving(true);
     try {
-      await deleteDoc(doc(db, 'projects', projectId));
+      await deleteDoc(doc(db, PROJECTS_3D_COLLECTION, projectId));
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdateProject(projectId: string, updates: { name?: string; address?: string }) {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, PROJECTS_3D_COLLECTION, projectId), updates);
+      setProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? { ...p, ...updates } : p)),
+      );
     } finally {
       setSaving(false);
     }
@@ -174,11 +186,12 @@ export function Admin3DProjects() {
       </form>
 
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-        <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto_auto] gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-medium uppercase tracking-wider text-neutral-500">
+        <div className="hidden border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-medium uppercase tracking-wider text-neutral-500 md:grid md:grid-cols-[1fr_1fr_1fr_auto_auto_auto_auto] md:gap-3">
           <div>{t('admin_projects_table_name')}</div>
           <div>{t('admin_projects_table_address')}</div>
           <div>{t('admin_projects_table_customer')}</div>
           <div>{t('admin_3d_unlock_label')}</div>
+          <div />
           <div />
           <div />
         </div>
@@ -198,16 +211,52 @@ export function Admin3DProjects() {
             {projects.map((p) => (
               <li
                 key={p.id}
-                className="grid grid-cols-[1fr_1fr_1fr_auto_auto_auto] items-center gap-3 px-4 py-3 text-sm"
+                className="grid grid-cols-1 gap-3 px-4 py-4 text-sm md:grid-cols-[1fr_1fr_1fr_auto_auto_auto_auto] md:items-center md:py-3"
               >
-                <div className="font-medium text-black">{p.name}</div>
-                <div className="text-neutral-600">{p.address || '—'}</div>
+                <div className="md:min-w-0">
+                  <span className="text-xs font-medium uppercase text-neutral-500 md:hidden">{t('admin_projects_table_name')}</span>
+                  <input
+                    type="text"
+                    value={p.name}
+                    onChange={(e) =>
+                      setProjects((prev) =>
+                        prev.map((proj) => (proj.id === p.id ? { ...proj, name: e.target.value } : proj)),
+                      )
+                    }
+                    onBlur={(e) => {
+                      const v = e.target.value.trim();
+                      if (v !== (p.name || '')) handleUpdateProject(p.id, { name: v });
+                    }}
+                    disabled={saving}
+                    className="mt-0.5 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm font-medium text-black outline-none focus:border-black md:mt-0"
+                  />
+                </div>
+                <div className="md:min-w-0">
+                  <span className="text-xs font-medium uppercase text-neutral-500 md:hidden">{t('admin_projects_table_address')}</span>
+                  <input
+                    type="text"
+                    value={p.address || ''}
+                    onChange={(e) =>
+                      setProjects((prev) =>
+                        prev.map((proj) => (proj.id === p.id ? { ...proj, address: e.target.value } : proj)),
+                      )
+                    }
+                    onBlur={(e) => {
+                      const v = e.target.value.trim() || undefined;
+                      if (v !== (p.address || '')) handleUpdateProject(p.id, { address: v || undefined });
+                    }}
+                    disabled={saving}
+                    placeholder="—"
+                    className="mt-0.5 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-600 outline-none focus:border-black md:mt-0"
+                  />
+                </div>
                 <div>
+                  <span className="text-xs font-medium uppercase text-neutral-500 md:hidden">{t('admin_projects_table_customer')}</span>
                   <select
                     value={p.customerId ?? ''}
                     onChange={(e) => handleAssignCustomer(p.id, e.target.value || null)}
                     disabled={saving}
-                    className="w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-black"
+                    className="mt-0.5 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-black md:mt-0"
                   >
                     <option value="">{t('admin_projects_not_assigned')}</option>
                     {customers.map((c) => (
@@ -236,20 +285,28 @@ export function Admin3DProjects() {
                     />
                   </button>
                 </div>
-                <Link
-                  to={`/admin/3d/${p.id}/scenes`}
-                  className="text-xs font-medium uppercase tracking-wider text-black hover:underline"
-                >
-                  {t('admin_3d_scenes_link')}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(p.id)}
-                  disabled={saving}
-                  className="text-xs text-neutral-500 hover:text-red-600 disabled:opacity-50"
-                >
-                  {t('admin_projects_delete')}
-                </button>
+                <div className="flex flex-wrap items-center gap-2 border-t border-neutral-100 pt-3 md:border-t-0 md:pt-0">
+                  <Link
+                    to={`/admin/3d/${p.id}/scenes`}
+                    className="text-xs font-medium uppercase tracking-wider text-black hover:underline"
+                  >
+                    {t('admin_3d_scenes_link')}
+                  </Link>
+                  <Link
+                    to={`/admin/3d/${p.id}/gallery`}
+                    className="text-xs font-medium uppercase tracking-wider text-black hover:underline"
+                  >
+                    {t('admin_gallery_link', 'Gallery')}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p.id)}
+                    disabled={saving}
+                    className="text-xs text-neutral-500 hover:text-red-600 disabled:opacity-50"
+                  >
+                    {t('admin_projects_delete')}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

@@ -279,24 +279,24 @@ export function WeekPanoramaViewer({
     function runInit() {
       if (!containerRef.current) return;
       const el = containerRef.current;
-      // On mobile, container can still report 0x0; skip init until we have dimensions.
       const w = el.offsetWidth || el.clientWidth;
       const h = el.offsetHeight || el.clientHeight;
-      if (w < 10 || h < 10) {
+      const minSize = mobile ? 20 : 10;
+      if (w < minSize || h < minSize) {
         if (typeof ResizeObserver !== 'undefined') {
           sizeWaitObserver = new ResizeObserver(() => {
             const w2 = el.offsetWidth || el.clientWidth;
             const h2 = el.offsetHeight || el.clientHeight;
-            if (w2 >= 10 && h2 >= 10 && sizeWaitObserver) {
+            if (w2 >= minSize && h2 >= minSize && sizeWaitObserver) {
               sizeWaitObserver.disconnect();
               sizeWaitObserver = null;
               runInit();
             }
           });
           sizeWaitObserver.observe(el);
-          return;
         }
-        initTimeoutId = window.setTimeout(runInit, 100);
+        // Same as 3D: retry after delay so we don't stay black on Android when layout is late.
+        initTimeoutId = window.setTimeout(runInit, mobile ? 400 : 100);
         return;
       }
       try {
@@ -321,26 +321,16 @@ export function WeekPanoramaViewer({
                 scene.hotspots?.map((h) => {
                   const target =
                     typeof h.targetSceneIndex === 'number' ? h.targetSceneIndex : 0;
-                  const cssClass =
-                    h.type === 'arrow' ? 'editor-hotspot-arrow' : 'editor-hotspot-circle';
-                  const rotation = h.rotation ?? 0;
-                  const spot: Record<string, unknown> = {
+                  const targetRoom = scenes[target]?.roomName ?? `Room ${target + 1}`;
+                  const text = (h.label ?? '').trim() || targetRoom;
+                  return {
                     pitch: h.pitch,
                     yaw: h.yaw,
-                    type: 'info',
-                    text: '',
-                    cssClass,
+                    type: 'info' as const,
+                    text,
+                    cssClass: 'editor-hotspot-text',
                     clickHandlerFunc: () => navigateTo(target),
                   };
-                  if (h.type === 'arrow') {
-                    spot.createTooltipFunc = (div: HTMLElement, args: { rotation?: number }) => {
-                      if (args && typeof args.rotation === 'number') {
-                        div.style.setProperty('--arrow-rotation', String(args.rotation) + 'deg');
-                      }
-                    };
-                    spot.createTooltipArgs = { rotation };
-                  }
-                  return spot;
                 }) ?? [],
               },
             ]),
@@ -408,11 +398,9 @@ export function WeekPanoramaViewer({
       }
     }
 
-    // Wait for layout so container has real dimensions on mobile (avoids black 0x0 canvas).
+    // Single RAF then init (same idea as 3D ReadOnlyPanorama); parent has min-height so container gets size.
     rafId1 = requestAnimationFrame(() => {
-      rafId2 = requestAnimationFrame(() => {
-        runInit();
-      });
+      runInit();
     });
 
     return () => {
@@ -435,7 +423,7 @@ export function WeekPanoramaViewer({
   const currentScene = scenes[currentIndex];
 
   return (
-    <div ref={rootRef} className="relative h-full w-full bg-black">
+    <div ref={rootRef} className="relative h-full w-full min-h-[240px] bg-black" style={{ minHeight: mobile ? '60vmin' : '240px' }}>
       {currentScene?.imageUrl && (
         <img
           src={currentScene.imageUrl}
@@ -444,15 +432,16 @@ export function WeekPanoramaViewer({
         />
       )}
       <div
-        className="h-full w-full"
+        className="h-full w-full min-h-[240px]"
         style={{
           opacity: transitionOpacity,
           transition: 'opacity 220ms cubic-bezier(0.22, 0.61, 0.36, 1)',
           willChange: 'opacity',
           backgroundColor: 'black',
+          minHeight: mobile ? '60vmin' : undefined,
         }}
       >
-        <div ref={containerRef} className="h-full w-full" />
+        <div ref={containerRef} className="h-full w-full min-h-[240px]" style={{ minHeight: mobile ? '60vmin' : undefined }} />
       </div>
 
       {(loading || showSpinner) && (
@@ -469,12 +458,6 @@ export function WeekPanoramaViewer({
             </p>
             <p className="mt-2 text-sm text-white/80">{errorText}</p>
           </div>
-        </div>
-      )}
-
-      {currentScene && (
-        <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-white backdrop-blur-sm">
-          {currentScene.roomName}
         </div>
       )}
 

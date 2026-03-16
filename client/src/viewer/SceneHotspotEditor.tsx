@@ -18,6 +18,7 @@ interface DraftHotspot {
   targetSceneIndex: number;
   type: HotspotType;
   rotation?: number;
+  label?: string;
 }
 
 interface SceneHotspotEditorProps {
@@ -35,6 +36,7 @@ function toDraft(h: SceneHotspot): DraftHotspot {
     targetSceneIndex: h.targetSceneIndex ?? 0,
     type: h.type,
     rotation: h.rotation ?? 0,
+    label: h.label,
   };
 }
 
@@ -45,6 +47,7 @@ function toSceneHotspot(h: DraftHotspot): SceneHotspot {
     targetSceneIndex: h.targetSceneIndex,
     type: h.type,
     rotation: h.rotation,
+    label: h.label,
   };
 }
 
@@ -74,6 +77,7 @@ export function SceneHotspotEditor({
   useEffect(() => {
     if (!containerRef.current || !scene.imageUrl) return;
 
+    // Same immediate init as ReadOnlyPanorama (no RAF/size-wait) so it works on Android.
     const v = window.pannellum.viewer(containerRef.current, {
       default: {
         firstScene: 'current',
@@ -89,29 +93,17 @@ export function SceneHotspotEditor({
           yaw: 120,
           hfov: 100,
           hotSpots: (draftHotspots ?? []).map((h, idx) => {
-            const rotation = h.rotation ?? 0;
-            const spot: Record<string, unknown> = {
+            const targetRoom = scenes[h.targetSceneIndex]?.roomName ?? `Room ${h.targetSceneIndex + 1}`;
+            const text = (h.label ?? '').trim() || targetRoom;
+            return {
               pitch: h.pitch,
               yaw: h.yaw,
-              text: '',
-              type: h.type === 'arrow' ? 'scene' : 'info',
-              sceneId: h.type === 'arrow' ? String(h.targetSceneIndex) : undefined,
-              rotation,
-              cssClass:
-                h.type === 'arrow'
-                  ? 'editor-hotspot-arrow'
-                  : 'editor-hotspot-circle',
+              text,
+              type: 'scene' as const,
+              sceneId: String(h.targetSceneIndex),
+              cssClass: 'editor-hotspot-text',
               clickHandlerFunc: () => setSelectedIndex(idx),
             };
-            if (h.type === 'arrow') {
-              spot.createTooltipFunc = (div: HTMLElement, args: { rotation?: number }) => {
-                if (args && typeof args.rotation === 'number') {
-                  div.style.setProperty('--arrow-rotation', String(args.rotation) + 'deg');
-                }
-              };
-              spot.createTooltipArgs = { rotation };
-            }
-            return spot;
           }),
         },
       },
@@ -119,6 +111,9 @@ export function SceneHotspotEditor({
 
     viewerRef.current = v;
     const container = containerRef.current;
+    v.on('load', () => {
+      if (typeof v.resize === 'function') v.resize();
+    });
 
     function handleClick(e: MouseEvent) {
       if (!viewerRef.current) return;
@@ -134,7 +129,7 @@ export function SceneHotspotEditor({
     function handleMouseDown(e: MouseEvent) {
       if (selectedIndex == null || !viewerRef.current) return;
       const target = e.target as HTMLElement;
-      if (!target.classList.contains('editor-hotspot-circle')) return;
+      if (!target.classList.contains('editor-hotspot-text')) return;
       setIsDragging(true);
       e.preventDefault();
     }
@@ -223,11 +218,12 @@ export function SceneHotspotEditor({
         </p>
       </div>
       <div className="flex flex-col md:flex-row">
+        {/* Same container as 3D / customer 360 for reliable Android */}
         <div
           ref={rootRef}
-          className="relative h-80 min-h-[280px] flex-1 bg-black md:h-96"
+          className="relative min-h-[320px] flex-1 overflow-hidden bg-black md:min-h-[520px]"
         >
-          <div ref={containerRef} className="h-full w-full" />
+          <div ref={containerRef} className="h-full w-full min-h-[320px] md:min-h-[520px]" />
           <button
             type="button"
             onClick={toggleFullscreen}
@@ -265,6 +261,10 @@ export function SceneHotspotEditor({
               {t('hotspot_editor_empty')}
             </p>
           ) : (
+            <>
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-neutral-500">
+              {t('hotspot_editor_button_text_help', { defaultValue: 'Button text (optional)' })}
+            </p>
             <div className="smooth-scrollbar max-h-48 space-y-2 overflow-y-auto pr-1">
               {draftHotspots.map((h, idx) => (
                 <div
@@ -282,41 +282,13 @@ export function SceneHotspotEditor({
                   >
                     {idx + 1}
                   </button>
-                  <select
-                    value={h.type}
-                    onChange={(e) =>
-                      updateHotspot(idx, { type: e.target.value as HotspotType })
-                    }
-                    className="rounded border border-neutral-300 px-2 py-1 text-xs"
-                  >
-                    <option value="circle">{t('hotspot_type_circle')}</option>
-                    <option value="arrow">{t('hotspot_type_arrow')}</option>
-                  </select>
-                  {h.type === 'arrow' && (
-                    <select
-                      value={
-                        (() => {
-                          const r = h.rotation ?? 0;
-                          const normalized = ((Math.round(r / 30) * 30) % 360 + 360) % 360;
-                          return normalized === 0 ? 12 : normalized / 30;
-                        })()
-                      }
-                      onChange={(e) => {
-                        const clock = Number(e.target.value);
-                        updateHotspot(idx, {
-                          rotation: clock === 12 ? 0 : clock * 30,
-                        });
-                      }}
-                      className="rounded border border-neutral-300 px-2 py-1 text-xs"
-                      title={t('hotspot_arrow_direction_clock')}
-                    >
-                      {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour) => (
-                        <option key={hour} value={hour}>
-                          {hour} {t('hotspot_clock_oclock')}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  <input
+                    type="text"
+                    value={h.label ?? ''}
+                    onChange={(e) => updateHotspot(idx, { label: e.target.value })}
+                    placeholder={scenes[h.targetSceneIndex]?.roomName ?? `Room ${h.targetSceneIndex + 1}`}
+                    className="min-w-0 flex-1 rounded border border-neutral-300 bg-white px-2 py-1 text-xs text-black placeholder:text-neutral-500"
+                  />
                   <select
                     value={h.targetSceneIndex}
                     onChange={(e) =>
@@ -324,7 +296,7 @@ export function SceneHotspotEditor({
                         targetSceneIndex: parseInt(e.target.value, 10),
                       })
                     }
-                    className="min-w-[120px] rounded border border-neutral-300 px-2 py-1 text-xs"
+                    className="min-w-[120px] rounded border border-neutral-300 bg-white px-2 py-1 text-xs text-black"
                   >
                     {scenes.map((s, i) => (
                       <option key={i} value={i}>
@@ -342,6 +314,7 @@ export function SceneHotspotEditor({
                 </div>
               ))}
             </div>
+            </>
           )}
         </div>
       </div>

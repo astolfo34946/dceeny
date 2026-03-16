@@ -13,6 +13,7 @@ import {
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { db } from '../lib/firebase';
+import { PROJECTS_3D_COLLECTION } from '../lib/useCustomerProject';
 import { EditorPanorama, type EditableHotspot, type EditableScene } from '../viewer/EditorPanorama';
 
 type SceneDoc = EditableScene;
@@ -36,7 +37,7 @@ export function Admin3DProjectScenes() {
 
   useEffect(() => {
     if (!projectId) return;
-    getDoc(doc(db, 'projects', projectId)).then((snap) => {
+    getDoc(doc(db, PROJECTS_3D_COLLECTION, projectId)).then((snap) => {
       setProjectName(snap.exists() ? ((snap.data() as { name?: string }).name ?? '') : '');
     });
   }, [projectId]);
@@ -45,7 +46,7 @@ export function Admin3DProjectScenes() {
     if (!projectId) return;
     setLoading(true);
     const q = query(
-      collection(db, 'projects', projectId, 'threeDScenes'),
+      collection(db, PROJECTS_3D_COLLECTION, projectId, 'threeDScenes'),
       orderBy('order', 'asc'),
     );
     getDocs(q).then((snap) => {
@@ -86,19 +87,23 @@ export function Admin3DProjectScenes() {
       });
       if (!resSign.ok) throw new Error(`Sign request failed: ${resSign.statusText}`);
 
-      const { timestamp, signature, apiKey, cloudName } = (await resSign.json()) as {
+      const resJson = (await resSign.json()) as {
         timestamp: number;
         signature: string;
         apiKey: string;
         cloudName: string;
+        folder?: string;
       };
+      const { timestamp, signature, apiKey, cloudName } = resJson;
+      // Use the exact folder the backend signed (no subFolder) to avoid 401.
+      const folder = resJson.folder ?? `projects/${projectId}`;
 
       const form = new FormData();
       form.append('file', file);
       form.append('api_key', apiKey);
       form.append('timestamp', String(timestamp));
       form.append('signature', signature);
-      form.append('folder', `projects/${projectId}/3d`);
+      form.append('folder', folder);
 
       const imageUrl = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -143,7 +148,7 @@ export function Admin3DProjectScenes() {
       });
 
       const nextOrder = scenes.length;
-      const sceneRef = doc(collection(db, 'projects', projectId, 'threeDScenes'));
+      const sceneRef = doc(collection(db, PROJECTS_3D_COLLECTION, projectId, 'threeDScenes'));
       const docData: Omit<SceneDoc, 'id'> & { createdAt: string } = {
         imageUrl,
         roomName: roomName.trim() || t('common_room'),
@@ -165,7 +170,7 @@ export function Admin3DProjectScenes() {
     if (!projectId) return;
     setSaving(true);
     try {
-      await updateDoc(doc(db, 'projects', projectId, 'threeDScenes', sceneId), { hotspots });
+      await updateDoc(doc(db, PROJECTS_3D_COLLECTION, projectId, 'threeDScenes', sceneId), { hotspots });
       setScenes((prev) => prev.map((s) => (s.id === sceneId ? { ...s, hotspots } : s)));
     } finally {
       setSaving(false);
@@ -179,13 +184,13 @@ export function Admin3DProjectScenes() {
     if (!window.confirm(t('admin_3d_delete_scene_confirm', { name: toDelete.roomName }))) return;
     setSaving(true);
     try {
-      await deleteDoc(doc(db, 'projects', projectId, 'threeDScenes', sceneId));
+      await deleteDoc(doc(db, PROJECTS_3D_COLLECTION, projectId, 'threeDScenes', sceneId));
       const remaining = scenes.filter((s) => s.id !== sceneId);
       // Re-pack order so it stays stable (0..n-1).
       const repacked = remaining.map((s, idx) => ({ ...s, order: idx }));
       await Promise.all(
         repacked.map((s) =>
-          updateDoc(doc(db, 'projects', projectId, 'threeDScenes', s.id), { order: s.order }),
+          updateDoc(doc(db, PROJECTS_3D_COLLECTION, projectId, 'threeDScenes', s.id), { order: s.order }),
         ),
       );
       setScenes(repacked);

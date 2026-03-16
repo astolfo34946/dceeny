@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthContext';
-import { useCustomerProject } from '../lib/useCustomerProject';
+import { useCustomer3DProject } from '../lib/useCustomerProject';
 import { Customer3DViewer } from './Customer3DViewer';
 
 export function Customer3D() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { project, loading } = useCustomerProject(user?.id);
+  const { project, loading } = useCustomer3DProject(user?.id);
 
   if (!user || loading) {
     return (
